@@ -6,11 +6,8 @@ import sys
 import queue
 import numpy as np
 import time
-from config import *
 
-''' Classes for AFC meter '''
-
-mapping = [c - 1 for c in channels]
+''' Class for AFC meter '''
 
 #---------------------------------------
 class afc_device(object):
@@ -26,7 +23,7 @@ class afc_device(object):
 		outdata[:] = self.amplitude * np.sin(2 * np.pi * self.frequency * t)
 		self.start_idx += frames
 #--прием потока с микрофоного входа-------------------------------------
-		self.q.put(indata[::self.downsample, mapping])
+		self.q.put(indata[::self.downsample, self.mapping])
 
 
 	def __init__(self, amplitude = 0.1,frequency = 150,
@@ -42,12 +39,14 @@ class afc_device(object):
 		self.x = []
 		self.y = []
 		self.frequency = freq_min
+		self.channels = [2]
 		self.amplitude = amplitude
 		self.freq_min = freq_min
 		self.freq_max = freq_max
 		self.freq_step = freq_step
 		self.time_conv = time_conv
 		self.data_mean = 0
+		self.downsample = 1
 		sd.default.blocksize = blocksize
 		sd.default.samplerate = samplerate
 		sd.default.channels = 2
@@ -56,7 +55,7 @@ class afc_device(object):
 									callback = self.__audio_callback)
 		self.stream.start()
 		print("create")
-
+		self.mapping = [c - 1 for c in self.channels]
 		self.figure = self.plotting(samplerate)
 		ani = FuncAnimation(self.figure, self.update_plot, interval = 50, blit = True)
 		plt.show()
@@ -130,13 +129,13 @@ class afc_device(object):
 		global lines
 		global data_mean
 
-		length = int(250 * samplerate / (1000 * downsample))
-		plotdata = np.zeros((length, len(channels)))
+		length = int(250 * samplerate / (1000 * self.downsample))
+		plotdata = np.zeros((length, len(self.channels)))
 		fig, ax = plt.subplots()
 		lines = ax.plot(plotdata)
-		if len(channels) > 1:
-			ax.legend(['channel {}'.format(c) for c in channels],
-				loc='lower left', ncol=len(channels))
+		if len(self.channels) > 1:
+			ax.legend(['channel {}'.format(c) for c in self.channels],
+				loc='lower left', ncol=len(self.channels))
 		ax.axis((0, len(plotdata), -1.0, 1.0))
 		ax.set_xlabel('время')
 		ax.set_ylabel('амплитуда, уе')

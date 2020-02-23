@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from classes import *
-from config import *
 
 #---------------------------------------------------------------------------
 #afc1 = afc_device(amplitude,frequency,blocksize,samplerate,
