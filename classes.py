@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from matplotlib.animation import FuncAnimation
 import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider, Button, RadioButtons
 import sounddevice as sd
 import sys
 import queue
@@ -10,7 +11,7 @@ import time
 ''' Class for AFC meter '''
 
 #---------------------------------------
-class afc_device(object):
+class gen_device(object):
 
 	def __audio_callback (self,indata, outdata, frames, time, status):
 		"""callback function"""
@@ -20,11 +21,16 @@ class afc_device(object):
 
 		t = (self.start_idx + np.arange(frames)) / (sd.default.samplerate)
 		t = t.reshape(-1, 1)
-		outdata[:] = self.amplitude * np.sin(2 * np.pi * self.frequency * t)
+		data_left  = 1 * self.amplitude * np.sin(2 * np.pi * self.frequency * t)
+		data_right = 1 * self.amplitude * np.sin(2 * np.pi * self.frequency * t)
+		
+		data_stereo = np.column_stack([data_left, data_right])
+		#outdata[::, self.mapping] = self.amplitude * np.sin(2 * np.pi * self.frequency * t)
+		outdata[::] = data_stereo
 		self.start_idx += frames
 #--прием потока с микрофоного входа-------------------------------------
+		
 		self.q.put(indata[::self.downsample, self.mapping])
-
 
 	def __init__(self, amplitude = 0.1,frequency = 150,
 					blocksize = 1024, samplerate = 16000,
@@ -38,8 +44,10 @@ class afc_device(object):
 		self.start = 0
 		self.x = []
 		self.y = []
+		self.data_left  = []
+		self.data_right = []
 		self.frequency = freq_min
-		self.channels = [2]
+		self.channels = [1,2]
 		self.amplitude = amplitude
 		self.freq_min = freq_min
 		self.freq_max = freq_max
@@ -54,8 +62,7 @@ class afc_device(object):
 		self.stream = sd.Stream(device = (sd.default.device, sd.default.device),
 									callback = self.__audio_callback)
 		self.stream.start()
-		print("create")
-		self.mapping = [c - 1 for c in self.channels]
+		self.mapping = [c - 1 for c in self.channels] 
 		self.figure = self.plotting(samplerate)
 		ani = FuncAnimation(self.figure, self.update_plot, interval = 50, blit = True)
 		plt.show()
@@ -68,18 +75,23 @@ class afc_device(object):
 
 	def calc(self,data):
 		"""calculation rms on current frequency"""
-
+		self.data_left  =  data[:,1]
+		self.data_right =  data[:,0]
+			
 		if self.flag_start == 1:
 			self.start = time.time()
 			self.flag_start = 0 
 
 		if time.time() - self.start >= self.time_conv:
-			rms = np.sqrt(np.mean(np.square(data)))
-			data = rms
-			self.data_mean = np.mean(data)
-			print(self.frequency,self.data_mean)
+			rms_left  = np.sqrt(np.mean(np.square(self.data_left)))
+			rms_right = np.sqrt(np.mean(np.square(self.data_right)))
+			
+			data_mean_left = np.mean(rms_left)
+			data_mean_right = np.mean(rms_right)
+
+			print(self.frequency,data_mean_left)
 			self.x.append(self.frequency)
-			self.y.append(20*np.log10(self.data_mean/self.Uref))
+			self.y.append(20*np.log10(data_mean_left/data_mean_right))
 			self.frequency += self.freq_step
 			self.flag_start = 1
 			#figure.ax.set_title("Входной сигнал. СКЗ = %d у.е." % (data_mean))
@@ -111,13 +123,15 @@ class afc_device(object):
 				data = self.q.get_nowait()
 			except queue.Empty:
 				break
-
+			
 			shift = len(data)
+
 			if self.calc(data) == 0:
 				 raise SystemExit
 
 			plotdata = np.roll(plotdata, -shift, axis=0)
 			plotdata[-shift:, :] = data
+		
 
 		for column, line in enumerate(lines):
 			line.set_ydata(plotdata[:, column])
@@ -140,10 +154,29 @@ class afc_device(object):
 		ax.set_xlabel('время')
 		ax.set_ylabel('амплитуда, уе')
 		plt.title("Входной сигнал")
-		#ax.set_title("Входной сигнал. СКЗ = %d у.е." % (self.data_mean))
 		ax.yaxis.grid(True)
 		ax.tick_params(bottom=True, top=False, labelbottom=True,
 				right=False, left=True, labelleft=True)
 		return fig
 
+	def single_tone(self,freq,ampl):
+		return 0
+
+	def alsn(self,freq,code,ampl):
+		return 0
+
+	def alsen(self,code1,code2,ampl):
+		return 0
+		
+	def krl(self,freq,code,ampl):
+		return 0
+
+	def trc3(self,freq,mod,ampl):
+		return 0
+
+	def fm(self,freq,mod,ampl):
+		return 0
+
+	def am(self,freq,mod,kmod,ampl):
+		return 0
 
