@@ -11,7 +11,7 @@ import time
 ''' Class for AFC meter '''
 
 #---------------------------------------
-class gen_device(object):
+class afc_device(object):
 
 	def __audio_callback (self,indata, outdata, frames, time, status):
 		"""callback function"""
