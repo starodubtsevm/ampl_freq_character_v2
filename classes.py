@@ -97,7 +97,10 @@ class afc_device(object):
 			#figure.ax.set_title("Входной сигнал. СКЗ = %d у.е." % (data_mean))
 			if self.frequency > self.freq_max:
 				fig, ax = plt.subplots()
-				ax.axis((self.freq_min, self.freq_max, -30, 3))
+				ax.axis((self.freq_min, self.freq_max, -50, 3))
+				plt.axvspan(464, 935, facecolor='#2ca02c', alpha=0.5)
+				plt.axhspan(-50, -40, facecolor='#2ca02c', alpha=0.5)
+				plt.axhspan(0, -7, facecolor='#2ca02c', alpha=0.5)
 				ax.set_title("АЧХ устройства. Время замера = %d сек"
 													 % (self.time_conv))
 				ax.yaxis.grid(True)
@@ -162,21 +165,4 @@ class afc_device(object):
 	def single_tone(self,freq,ampl):
 		return 0
 
-	def alsn(self,freq,code,ampl):
-		return 0
-
-	def alsen(self,code1,code2,ampl):
-		return 0
-		
-	def krl(self,freq,code,ampl):
-		return 0
-
-	def trc3(self,freq,mod,ampl):
-		return 0
-
-	def fm(self,freq,mod,ampl):
-		return 0
-
-	def am(self,freq,mod,kmod,ampl):
-		return 0
 
