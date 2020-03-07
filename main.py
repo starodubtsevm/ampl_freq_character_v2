@@ -7,5 +7,5 @@ from classes import *
 #	freq_min,freq_max,freq_step,time_conv)
 afc1 = afc_device()
 
-input("Press Enter to exit...")
+input("...Press Enter to exit...")
 #---------------------------------------------------------------------------
